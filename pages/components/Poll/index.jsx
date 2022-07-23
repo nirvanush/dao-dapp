@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, useEffect, useState } from 'react'
 import animate from './animate.module.css'
 import styles from './styles.module.css'
 
@@ -11,10 +11,10 @@ const themes = {
   cyan: ['#00BCDD', '#00BCDD', '#00BCDD3B']
 }
 
-export default class Poll extends Component {
+export default function Poll(props) {
   // Answers prop format: [ { option: string, votes: number } ]
 
-  static defaultProps = {
+  const defaultProps = {
     customStyles: {
       questionSeparator: true,
       questionSeparatorWidth: 'question',
@@ -23,76 +23,67 @@ export default class Poll extends Component {
       align: 'center',
       theme: 'black'
     },
-    noStorage: false
+    noStorage: true
   }
 
-  state = {
-    poll: {
-      voted: false,
-      option: ''
-    },
-    totalVotes: 0
-  }
+  const theProps = Object.assign({}, defaultProps, props);
 
-  componentDidMount() {
-    const { noStorage } = this.props
-    if (!noStorage) this.checkVote()
-    this.loadVotes()
-  }
+  const [poll, setPoll] = useState({
+    voted: false,
+    option: ''
+  })
+  const [totalVotes, setTotalVotes] = useState(0);
+  
+  useEffect(() => {
+    const { noStorage } = theProps
+    if (!noStorage) checkVote()
+    loadVotes()
 
-  componentWillReceiveProps() {
-    this.loadVotes()
-  }
+  }, [poll, totalVotes]) 
 
-  checkVote = () => {
-    const { question } = this.props
-    const storage = this.getStoragePolls()
+  function checkVote() {
+    const { question } = theProps
+    const storage = getStoragePolls()
     const answer = storage.filter(answer => answer.question === question && answer.url === location.href)
 
     if (answer.length) {
-      this.setPollVote(answer[0].option)
+      setPollVote(answer[0].option)
     }
   }
 
-  loadVotes = () => {
-    const { answers, vote } = this.props
+  function loadVotes() {
+    const { answers, vote } = theProps
     const totalVotes = answers.reduce((total, answer) => total + answer.votes, 0)
-    this.setState({
-      totalVotes: answers.reduce((total, answer) => total + answer.votes, 0)
-    })
-    if (vote) this.setPollVote(vote)
+      setTotalVotes(answers.reduce((total, answer) => total + answer.votes, 0))
+    if (vote) setPollVote(vote)
   }
 
-  setPollVote = (answer) => {
-    const { answers, vote } = this.props
-    const optionsOnly = answers.map(item => item.option)
+  function setPollVote(answer) {
+    const { answers, vote } = theProps
+    const optionsOnly = (answers || []).map(item => item.option)
 
     if (optionsOnly.includes(answer)) {
-      const { poll, totalVotes } = this.state
       const newPoll = { ...poll }
       newPoll.voted = true
       newPoll.option = answer
 
       if (!vote) {
-        this.setState({
-          poll: newPoll,
-          totalVotes: totalVotes + 1
-        })
+        setPoll(newPoll);
+        setTotalVotes(totalVotes + 1);
+
       } else {
-        this.setState({
-          poll: newPoll
-        })
+        setPoll(newPoll);
       }
     }
   }
 
   // Storage format: [ { url: string, question: string, option: string } ]
-  getStoragePolls = () => JSON.parse(localStorage.getItem('react-polls')) || []
+  function getStoragePolls() { return JSON.parse(localStorage.getItem('react-polls')) || []}
 
-  vote = answer => {
-    const { question, onVote, noStorage } = this.props
+  function vote(answer) {
+    const { question, onVote, noStorage } = theProps
     if (!noStorage) {
-      const storage = this.getStoragePolls()
+      const storage = getStoragePolls()
       storage.push({
         url: location.href,
         question: question,
@@ -101,18 +92,18 @@ export default class Poll extends Component {
       localStorage.setItem('react-polls', JSON.stringify(storage))
     }
 
-    this.setPollVote(answer)
+    setPollVote(answer)
     onVote(answer)
   }
 
-  calculatePercent = (votes, total) => {
+  function calculatePercent(votes, total) {
     if (votes === 0 && total === 0) {
       return '0%'
     }
     return `${parseInt((votes / total) * 100)}%`
   }
 
-  alignPoll = (customAlign) => {
+  function alignPoll(customAlign) {
     if (customAlign === 'left') {
       return 'flex-start'
     } else if (customAlign === 'right') {
@@ -122,7 +113,7 @@ export default class Poll extends Component {
     }
   }
 
-  obtainColors = customTheme => {
+  function obtainColors(customTheme) {
     const colors = themes[customTheme]
     if (!colors) {
       return themes['black']
@@ -130,35 +121,32 @@ export default class Poll extends Component {
     return colors
   }
 
-  render() {
-    const { question, answers, customStyles } = this.props
-    const { poll, totalVotes } = this.state
-    const colors = this.obtainColors(customStyles.theme)
+  const { question, answers, customStyles } = theProps
+  const colors = obtainColors(customStyles.theme)
 
-    return (
-      <article className={`${animate.animated} ${animate.fadeIn} ${animate.faster} ${styles.poll}`} style={{ textAlign: customStyles.align, alignItems: this.alignPoll(customStyles.align) }}>
-        <h3 className={styles.question} style={{ borderWidth: customStyles.questionSeparator ? '1px' : '0', alignSelf: customStyles.questionSeparatorWidth === 'question' ? 'center' : 'stretch', fontWeight: customStyles.questionBold ? 'bold' : 'normal', color: customStyles.questionColor }}>{question}</h3>
-        <ul className={styles.answers}>
-          {answers.map(answer => (
-            <li key={answer.option}>
-              {!poll.voted ? (
-                <button className={`${animate.animated} ${animate.fadeIn} ${animate.faster} ${styles.option} ${styles[customStyles.theme]}`} style={{ color: colors[0], borderColor: colors[1] }} type='button' onClick={() => this.vote(answer.option)}>
-                  {answer.option}
-                </button>
-              ) : (
-                <div className={`${animate.animated} ${animate.fadeIn} ${animate.faster} ${styles.result}`} style={{ color: colors[0], borderColor: colors[1] }}>
-                  <div className={styles.fill} style={{ width: this.calculatePercent(answer.votes, totalVotes), backgroundColor: colors[2] }} />
-                  <div className={styles.labels}>
-                    <span className={styles.percent} style={{ color: colors[0] }}>{this.calculatePercent(answer.votes, totalVotes)}</span>
-                    <span className={`${styles.answer} ${answer.option === poll.option ? styles.vote : ''}`} style={{ color: colors[0] }}>{answer.option}</span>
-                  </div>
+  return (
+    <article className={`${animate.animated} ${animate.fadeIn} ${animate.faster} ${styles.poll}`} style={{ textAlign: customStyles.align, alignItems: alignPoll(customStyles.align), width: 400 }}>
+      <h3 className={styles.question} style={{ borderWidth: customStyles.questionSeparator ? '1px' : '0', alignSelf: customStyles.questionSeparatorWidth === 'question' ? 'center' : 'stretch', fontWeight: customStyles.questionBold ? 'bold' : 'normal', color: customStyles.questionColor }}>{question}</h3>
+      <ul className={styles.answers}>
+        {(answers || []).map(answer => (
+          <li key={answer.option}>
+            {!poll.voted ? (
+              <button className={`${animate.animated} ${animate.fadeIn} ${animate.faster} ${styles.option} ${styles[customStyles.theme]}`} style={{ color: colors[0], borderColor: colors[1] }} type='button' onClick={() => vote(answer.option)}>
+                {answer.option}
+              </button>
+            ) : (
+              <div className={`${animate.animated} ${animate.fadeIn} ${animate.faster} ${styles.result}`} style={{ color: colors[0], borderColor: colors[1] }}>
+                <div className={styles.fill} style={{ width: calculatePercent(answer.votes, totalVotes), backgroundColor: colors[2] }} />
+                <div className={styles.labels}>
+                  <span className={styles.percent} style={{ color: colors[0] }}>{calculatePercent(answer.votes, totalVotes)}</span>
+                  <span className={`${styles.answer} ${answer.option === poll.option ? styles.vote : ''}`} style={{ color: colors[0] }}>{answer.option}</span>
                 </div>
-              )}
-            </li>
-          ))}
-        </ul>
-        <p className={styles.votes}>{`${totalVotes} vote${totalVotes !== 1 ? 's' : ''}`}</p>
-      </article>
-    )
-  }
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className={styles.votes}>{`${totalVotes} vote${totalVotes !== 1 ? 's' : ''}`}</p>
+    </article>
+  )
 }

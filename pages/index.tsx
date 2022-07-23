@@ -5,12 +5,7 @@ import { useState } from 'react';
 import styles from '../styles/Home.module.css'
 import Poll from './components/Poll';
 
-const pollQuestion = 'Is react-polls useful?'
-
-const answers = [
-  { option: 'Yes', votes: 8 },
-  { option: 'No', votes: 2 }
-]
+const pollQuestion = 'What is the next feature SigmaValley should support?'
 
 type PollVariant = {
   option: string;
@@ -18,10 +13,14 @@ type PollVariant = {
 }
   
 const Home: NextPage = () => {
-  const [pollAnswers, setPollAnswers] = useState<PollVariant[]>(answers);
+  const [pollAnswers, setPollAnswers] = useState<PollVariant[]>([
+    { option: 'Avatars', votes: 0 },
+    { option: 'Deploy NFT models', votes: 0 },
+    { option: 'DAO votes', votes: 0 }
+  ]);
 
   function handleVote(voteAnswer: string) {
-    const newPollAnswers = pollAnswers.map(answer => {
+    const newPollAnswers = (pollAnswers || []).map(answer => {
       if (answer.option === voteAnswer) answer.votes++
       return answer
     })
@@ -39,21 +38,8 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <Poll question={pollQuestion} answers={answers} onVote={handleVote}/>
+        <Poll question={pollQuestion} answers={pollAnswers} onVote={handleVote}/>
       </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
     </div>
   )
 }
