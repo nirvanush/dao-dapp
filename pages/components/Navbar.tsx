@@ -8,23 +8,31 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 
-import { HamburgerIcon, CloseIcon, AddIcon } from '@chakra-ui/icons';
+import { AddIcon, CheckIcon } from '@chakra-ui/icons';
+import { useEffect, useState } from 'react';
 
 
 export default function withAction() {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [userAddress, setUserAddress] = useState<string>('');
+
+  async function handleConnectWallet() {
+    const isConnected: boolean = await ergo_request_read_access();
+    if (isConnected) {
+      const address = await ergo.get_change_address()
+
+      setUserAddress(address);
+    }
+  }
+
+  useEffect(() => {
+    handleConnectWallet();
+  }, [])
 
   return (
     <>
       <Box bg={useColorModeValue('gray.100', 'gray.900')} px={4}>
         <Flex h={16} alignItems={'center'} justifyContent={'space-between'}>
-          <IconButton
-            size={'md'}
-            icon={isOpen ? <CloseIcon /> : <HamburgerIcon />}
-            aria-label={'Open Menu'}
-            display={{ md: 'none' }}
-            onClick={isOpen ? onClose : onOpen}
-          />
           <HStack spacing={8} alignItems={'center'}>
             <Box>SigmaValley DAO</Box>
           </HStack>
@@ -34,8 +42,9 @@ export default function withAction() {
               colorScheme={'teal'}
               size={'md'}
               mr={4}
-              leftIcon={<AddIcon />}>
-              Connect wallet
+              onClick={handleConnectWallet}
+              leftIcon={userAddress ? <CheckIcon/> : <AddIcon />}>
+              {userAddress || 'Connect wallet'}
             </Button>
           </Flex>
         </Flex>
