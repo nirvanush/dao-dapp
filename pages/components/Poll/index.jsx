@@ -16,7 +16,7 @@ export default function Poll(props) {
 
   const defaultProps = {
     customStyles: {
-      questionSeparator: true,
+      questionSeparator: false,
       questionSeparatorWidth: 'question',
       questionBold: true,
       questionColor: '#303030',
