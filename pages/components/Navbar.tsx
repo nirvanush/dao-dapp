@@ -11,7 +11,7 @@ import { AddIcon } from '@chakra-ui/icons';
 export default function withAction() {
   return (
     <>
-      <Box px={4}>
+      <Box bg={'gray.100'} px={4}>
         <Flex h={16} alignItems={'center'} justifyContent={'space-between'}>
           <HStack spacing={8} alignItems={'center'}>
             <Box>SigmaValley DAO</Box>
