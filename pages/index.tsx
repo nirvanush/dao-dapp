@@ -5,6 +5,7 @@ import { useState } from 'react';
 import styles from '../styles/Home.module.css'
 import Poll from './components/Poll';
 
+import Transaction, { NANO_ERG_IN_ERG } from 'ergoscript';
 const pollQuestion = 'What is the next feature SigmaValley should support?'
 
 type PollVariant = {
@@ -19,13 +20,31 @@ const Home: NextPage = () => {
     { option: 'DAO votes', votes: 0 }
   ]);
 
-  function handleVote(voteAnswer: string) {
+  async function handleVote(voteAnswer: string) {
     const newPollAnswers = (pollAnswers || []).map(answer => {
       if (answer.option === voteAnswer) answer.votes++
       return answer
     })
 
     setPollAnswers(newPollAnswers)
+
+    const tx = new Transaction([
+      {
+        funds: {
+          ERG: 0.001 * NANO_ERG_IN_ERG,
+          tokens: [ { tokenId: '0cd8c9f416e5b1ca9f986a7f10a84191dfb85941619e49e53c0dc30ebf83324b', amount: 1 } ]
+        },
+        toAddress: "9hu1CHr4MBd7ikUjag59AZ9VHaacvTRz34u58eoLp7ZF3d1oSXk",
+        additionalRegisters: {}
+      }
+    ])
+
+    const unsignedTx = await tx.build();
+
+    const signedTx = await ergo.sign_tx(unsignedTx.toJSON());
+
+    console.log(signedTx);
+    await ergo.submit_tx(signedTx);    
   }
 
   return (
