@@ -13,7 +13,7 @@ export default function withAction() {
   const [userAddress, setUserAddress] = useState<string>('');
 
   async function handleConnectWallet() {
-    const isConnected: boolean = await ergo_request_read_access();
+    const isConnected: boolean = await ergo_check_read_access() || await ergo_request_read_access();
     if (isConnected) {
       const address = await ergo.get_change_address()
 
